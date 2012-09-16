@@ -25,7 +25,7 @@
 			android:key="ball_speed" android:title="@string/label_ball_speed"
 			android:text="+%s" android:summary="@string/summary_ball_speed"
 			android:dialogMessage="@string/label_ball_speed"
-			android:defaultValue="0" android:max="15" />
+			android:defaultValue="10" android:max="15" />
 			
 		<com.hlidskialf.android.preference.SeekBarPreference
 			android:key="lives" android:title="@string/label_lives"

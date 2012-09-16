@@ -1,5 +1,6 @@
 package org.oep.pong;
 
+import java.util.LinkedList;
 import java.util.Random;
 
 import android.content.Context;
@@ -103,6 +104,12 @@ public class PongView extends View implements OnTouchListener, OnKeyListener {
 	
 	/** Flags indicating who is a player */
 	private boolean mRedPlayer = false, mBluePlayer = false;
+	
+	/** boost zones**/
+	private LinkedList<Boost> mBoosts = new LinkedList<Boost>();
+	
+	private static final int BOOST_ADDITION = 10;
+	private static final int BOOST_DURATION = 100;
 
 	/**
 	 * An overloaded class that repaints this view in a separate thread.
@@ -228,6 +235,10 @@ public class PongView extends View implements OnTouchListener, OnKeyListener {
 		// Shake it up if it appears to not be moving vertically
 		if(py == mBall.y && mBall.serving() == false) {
 			mBall.randomAngle();
+		}
+		
+		for(Boost b : mBoosts) {
+			b.checkForBoost(mBall);
 		}
 		
 		// Do some basic paddle AI
@@ -435,6 +446,20 @@ public class PongView extends View implements OnTouchListener, OnKeyListener {
     private void initializePongView() {
     	initializePause();
     	initializePaddles();
+    	initializeBoosts();
+    }
+    
+    private void initializeBoosts() {
+        
+    	int xmid = getWidth() / 2;
+    	int ymid = getHeight() / 2;
+    	
+    	String boostStr = "Boost";
+    	int boostW = (int) mPaint.measureText(boostStr);
+    	
+    	Boost b1 = new Boost(xmid - boostW , ymid - boostW, boostW * 2, boostW);
+    		
+    	mBoosts.add(b1);
     }
     
     private void initializePause() {
@@ -525,6 +550,10 @@ public class PongView extends View implements OnTouchListener, OnKeyListener {
         // Draw the paddles / touch boundaries
     	mRed.draw(canvas);
     	mBlue.draw(canvas);
+    	
+    	for(Boost b : mBoosts) {
+    		b.draw(canvas);
+    	}
 
     	// Draw touchboxes if needed
     	if(gameRunning() && mRed.player && mCurrentState == State.Running)
@@ -781,6 +810,33 @@ public class PongView extends View implements OnTouchListener, OnKeyListener {
 		mPool.play(rid, 0.2f, 0.2f, 1, 0, 1.0f);
 	}
 	
+	class Boost {
+		public int x,y,width,height;
+		
+		public Boost(int xPos, int yPos, int widthVal, int heightVal) {
+			this.x = xPos;
+			this.y = yPos;
+			this.width = widthVal;
+			this.height = heightVal;
+		}
+		
+		public void checkForBoost(Ball ball)
+		{
+			if(ball.x >= this.x && ball.x <= this.x + width && ball.y >= this.y && ball.y <= this.y + height )
+			{
+				ball.mIsBoost = true;
+			}
+		}
+		
+		public void draw(Canvas canvas) {
+			mPaint.setColor(Color.GREEN);
+			mPaint.setStyle(Style.STROKE);
+			Rect rect = new Rect(this.x, this.y + height, this.x + width, this.y );
+			canvas.drawRect(rect, mPaint);
+			canvas.drawText("Boost", x, y, mPaint);
+		}
+	}
+	
 	class Ball {
 		public float x, y, xp, yp, vx, vy;
 		public float speed = SPEED;
@@ -788,6 +844,9 @@ public class PongView extends View implements OnTouchListener, OnKeyListener {
 		protected double mAngle;
 		protected boolean mNextPointKnown = false;
 		protected int mCounter = 0;
+		
+		private boolean mIsBoost = false;		
+		private int boosDuration = 0;
 		
 		public Ball() {
 			findVector();
@@ -802,6 +861,11 @@ public class PongView extends View implements OnTouchListener, OnKeyListener {
 			vy = other.vy;
 			speed = other.speed;
 			mAngle = other.mAngle;
+		}
+		
+		public void Boost() {
+			this.speed += BOOST_ADDITION;
+			this.boosDuration += BOOST_DURATION;
 		}
 		
 		protected void findVector() {
@@ -837,13 +901,24 @@ public class PongView extends View implements OnTouchListener, OnKeyListener {
 			mCounter = 60;
 		}
 		
-		public void move() {
+		public void move() {			
 			if(mCounter <= 0) {
 				x = keepX(x + vx); 
 				y += vy;
 			}
 			else {
 				mCounter--;
+			}
+			
+			if(mIsBoost) {
+				if(boosDuration == 0) {
+					this.mIsBoost = false;
+				}
+				else {
+					boosDuration -= 1;
+					speed -= 1;
+					findVector();
+				}
 			}
 		}
 		
