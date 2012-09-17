@@ -67,6 +67,11 @@ public class PongView extends View implements OnTouchListener, OnKeyListener {
 	/** CPU handicap */
 	private int mCpuHandicap;
 	
+/** Snow Object*/
+	
+	private Snowy mSnowy = null;
+
+	
 	/** Starts a new round when set to true */
 	private boolean mNewRound = true;
 	
@@ -76,11 +81,9 @@ public class PongView extends View implements OnTouchListener, OnKeyListener {
 	/** Mutes sounds when true */
 	private boolean mMuted = false;
 
-//<<<<<<< HEAD
-	private Paddle mRed, mBlue, mMagenta, mGreen;;
-//=======
-	
-//>>>>>>> ljlindgren/master
+
+	private Paddle mRed, mBlue;
+
 	
 	/** Touch boxes for various functions. These are assigned in initialize() */
 	private Rect mPauseTouchBox;
@@ -130,7 +133,7 @@ private Starfield mStarfield = null;
 	 *
 	 */
 	class RefreshHandler extends Handler {
-		@Override
+		//@Override
 		public void handleMessage(Message msg) {
 			PongView.this.update();
 			PongView.this.invalidate(); // Mark the view as 'dirty'
@@ -280,9 +283,9 @@ private Starfield mStarfield = null;
 	
 	protected void handleBounces(float px, float py) {
 		handleTopFastBounce(mRed, px, py);
-		handleMiddleFastBounce(mMagenta,px,py);
+		//handleMiddleFastBounce(mMagenta,px,py);
 		handleBottomFastBounce(mBlue, px, py);
-		handleMiddleBounce(mGreen, px, py);
+		//handleMiddleBounce(mGreen, px, py);
 		
 		// Handle bouncing off of a wall
 		if(mBall.x <= Ball.RADIUS || mBall.x >= getWidth() - Ball.RADIUS) {
@@ -464,28 +467,22 @@ private Starfield mStarfield = null;
 	 * Knocks up the framerate a bit to keep it difficult.
 	 */
 	private void increaseDifficulty() {
-//<<<<<<< HEAD
+
+		mBall.speed = mBall.speed + mBall.speed + 3;
 		eventCounter++;
 		if(eventCounter%5==0){
 			mBall.teleport();
 			mBall.speed*=2;			
 		}
 		mBall.speed+=2;
-//=======
-//<<<<<<< HEAD
-		aiPrediction(mMagenta, mBlue);
+		aiPrediction(mRed, mBlue);
 		totalHits++;
 		if (totalHits > 5)
 		{
 			mBall.speed = mBall.speed+ mBall.speed + 2;
 			
 		}
-
-//=======
-		
 		mBall.speed++;
-//>>>>>>> ljlindgren/master
-//>>>>>>> secondrepo/master
 	}
 
 	/**
@@ -514,6 +511,7 @@ private Starfield mStarfield = null;
     	initializePause();
     	initializePaddles();
 initializeBoosts();
+    	initializeSnowy();
 initializeStarfield();
     }
     
@@ -540,29 +538,21 @@ initializeStarfield();
     private void initializePaddles() {
     	Rect redTouch = new Rect(0,0,getWidth(),getHeight() / 8);
     	Rect blueTouch = new Rect(0, 7 * getHeight() / 8, getWidth(), getHeight());
-//<<<<<<< HEAD
-    	Rect magentaTouch = new Rect(0, 7* getHeight() / 5, getWidth(), getHeight());
 
     	mRed = new Paddle(Color.RED, redTouch.bottom + PADDING);
     	mBlue = new Paddle(Color.BLUE, blueTouch.top - PADDING - Paddle.PADDLE_THICKNESS);
-    	mMagenta = new Paddle(Color.MAGENTA, magentaTouch.top /PADDING + 10 );
-//=======
+
     	Rect greenTouch = new Rect(0, 7 * getHeight() / 5, getWidth(), getHeight()); 
     	
     	mRed = new Paddle(Color.RED, redTouch.bottom + PADDING);
     	mBlue = new Paddle(Color.BLUE, blueTouch.top - PADDING - Paddle.PADDLE_THICKNESS);
-    	mGreen = new Paddle(Color.GREEN, greenTouch.top / PADDING + 8); 
-//>>>>>>> ljlindgren/master
-    	
-    	mGreen.setTouchbox(greenTouch); 
+
     	mRed.setTouchbox( redTouch );
     	mBlue.setTouchbox( blueTouch );
-    	mMagenta.setTouchbox(magentaTouch);
     	
-    	mGreen.setHandicap(mCpuHandicap); 
+
     	mRed.setHandicap(mCpuHandicap);
     	mBlue.setHandicap(mCpuHandicap);
-    	mMagenta.setHandicap(mCpuHandicap);
     	
     	mRed.player = mRedPlayer;
     	mBlue.player = mBluePlayer;
@@ -585,6 +575,12 @@ initializeStarfield();
     	mBall.randomAngle();
     	mBall.pause();
     }
+    
+    private void initializeSnowy() {
+    	mSnowy = new Snowy(getWidth(), getHeight());	
+    }
+
+    
     
     protected float bound(float x, float low, float hi) {
     	return Math.max(low, Math.min(x, hi));
@@ -639,11 +635,8 @@ initializeStarfield();
         // Draw the paddles / touch boundaries
     	mRed.draw(canvas);
     	mBlue.draw(canvas);
-//<<<<<<< HEAD
-    	mMagenta.draw(canvas);
-//=======
-    	mGreen.draw(canvas); 
-//>>>>>>> ljlindgren/master
+
+    	mSnowy.draw(canvas);
     	
     	for(Boost b : mBoosts) {
     		b.draw(canvas);
@@ -660,7 +653,6 @@ initializeStarfield();
 //<<<<<<< HEAD
      //  mPaint.setStyle(Style.FILL);
        // mPaint.setColor(Color.WHITE);
-//=======
         mPaint.setStyle(Style.FILL);
         mPaint.setColor(Color.YELLOW);
 
@@ -1184,11 +1176,75 @@ initializeStarfield();
 		}
 		
 		public static final double BOUND = Math.PI / 9;
-		public static final float SPEED = 4.0f;
+
+		public static final float SPEED = 12.0f; 
+		public static final int RADIUS = 10;
+
 		public static final float CENTER_HIT_CONSTANT = 6f;
-		public static final int RADIUS = 4;
+
 		public static final double SALT = 4 * Math.PI / 9;
 	}
+	
+	class Snowy {
+		private int width = 0;
+		private int height = 0;
+		private int nSnow = 500;
+		private int maxSpeed = 2;
+		private Snow[] snowArray = new Snow[nSnow];
+		private Random r = new Random(); 
+		
+		
+		public class Snow {
+			public int x = 0;
+			public int y = 0;
+			public int radius = 0;
+			public int speed = 0;
+			public int color = 0;
+		}
+
+		public Snowy(int w, int h) {
+			height = h;
+			width = w;
+			for (int i=0; i<nSnow; i++) {
+				resetSnow(snowArray[i] = new Snow());
+				snowArray[i].y = r.nextInt(height);
+			}
+		}
+
+		/* Reset the Snow flakes*/
+
+		private void resetSnow(Snow snow) {	
+			snow.y = 0;
+			snow.x = r.nextInt(width);
+			snow.speed = r.nextInt(maxSpeed)*2;
+			snow.radius = 2;
+			snow.color= Color.WHITE ;
+			}
+		
+		/* Moves the Snow Flakes*/
+
+		private void moveSnow(Snow snow) {
+			snow.y = snow.y + snow.speed * 2;
+			if (snow.y > height) resetSnow(snow);
+		}
+
+		/*Draws the Snow Flakes*/
+		public void draw(Canvas canvas) {
+			for (int i=0; i<nSnow; i++) {
+				moveSnow(snowArray[i]);
+				mPaint.setColor(snowArray[i].color);
+				canvas.drawPoint(snowArray[i].x, snowArray[i].y, mPaint);
+			}
+		}
+	}
+
+	
+	
+	
+	
+	
+	
+	
 
 	class Star {
 		public int x = 0;
